@@ -346,12 +346,12 @@ pub fn do_generate(attachments: &Inputs, frame_set: &FrameSet, id: &str) -> Resu
 
     struct Row {
         entries: Vec<(RowId, u8, RowKind)>, // Row ID, start, kind
-        offsets: IndexMap<u8, u32>, // start, entries index
+        offsets: IndexMap<u8, u32, FixedState>, // start, entries index
         min_start: u32,
         max_start: u32
     }
 
-    let mut rows: IndexMap<Vec<[u8; 4]>, Row> = IndexMap::new();
+    let mut rows: IndexMap<Vec<[u8; 4]>, Row, FixedState> = IndexMap::default();
     let mut frames: HashMap<u64, RowId> = HashMap::default();
 
     let mut legacy_len: u32 = 0;
@@ -434,7 +434,7 @@ pub fn do_generate(attachments: &Inputs, frame_set: &FrameSet, id: &str) -> Resu
                     let sliding_begin = width.div_ceil(2) as u8 - (row_vec.len().div_ceil(2) as u8);
                     let row = rows.entry(row_vec).or_insert_with(|| Row{
                         entries: vec![(0, sliding_begin, RowKind::Sliding)],
-                        offsets: IndexMap::new(),
+                        offsets: IndexMap::default(),
                         min_start: u32::MAX,
                         max_start: 0
                     });
