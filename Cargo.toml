@@ -29,3 +29,7 @@ criterion = { version = "0.8.2", features = ["html_reports"] }
 [[bench]]
 name = "generate"
 harness = false
+
+[[bench]]
+name = "closest"
+harness = false

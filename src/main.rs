@@ -20,6 +20,18 @@ enum Command {
         image: PathBuf,
         #[arg(short = 't', long = "type", value_enum, default_value_t = SpriteOutputType::Raw)]
         output_type: SpriteOutputType,
+        /// looks for a game asset that the sprite is a crop, flip and recolor of (raw output only)
+        #[arg(long)]
+        closest: bool,
+        /// the packed assets to look in, later ones replacing earlier ones (default: the game's own)
+        #[arg(long = "assets", requires = "closest")]
+        assets: Vec<PathBuf>,
+        /// only look at assets under this path, like /items/ (can be given more than once)
+        #[arg(long, requires = "closest")]
+        under: Vec<String>,
+        /// accept assets where this many pixels will come out wrong
+        #[arg(long, default_value_t = 0, requires = "closest")]
+        max_mismatch: usize,
         #[arg(short, long)]
         output: Option<PathBuf>,
     },
@@ -75,6 +87,28 @@ fn main() -> anyhow::Result<()> {
             image,
             output_type,
             output,
+            closest: true,
+            assets,
+            under,
+            max_mismatch,
+        } => {
+            if !matches!(output_type, SpriteOutputType::Raw) {
+                anyhow::bail!(
+                    "--closest only makes the raw output: hats and objects apply their directives to an image of their own"
+                );
+            }
+            let options = stargen::closest::Options {
+                under,
+                max_mismatch,
+                ..Default::default()
+            };
+            stargen::closest::generate(&image, &assets, &options, output)
+        }
+        Command::Sprite {
+            image,
+            output_type,
+            output,
+            ..
         } => generator::generate_sprite(&image, output_type, output),
         Command::Chest {
             chest_female,

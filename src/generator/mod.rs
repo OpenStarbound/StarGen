@@ -427,7 +427,7 @@ pub fn load_input(path: &Path) -> Result<Input> {
     })
 }
 
-fn write_output(output: Option<PathBuf>, default: &str, content: String) -> Result<()> {
+pub fn write_output(output: Option<PathBuf>, default: &str, content: String) -> Result<()> {
     match output {
         Some(path) if path.as_os_str() == "-" => println!("{content}"),
         path => {

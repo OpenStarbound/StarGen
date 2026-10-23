@@ -11,7 +11,7 @@ This is a separate crate so that building stargen never needs an engine checkout
 1. Build OpenStarbound, the objects of `star_core` and the others must exist in its `build/`.
 2. `./setup.sh [path to OpenStarbound]` collects the compile flags and the link line into `engine/` (git ignored).
 3. The game's assets: `~/.local/share/OpenStarbound/assets/packed.pak` (or `STARBOUND_PAK`) and OpenStarbound's own assets in `~/code/game/OpenStarbound/assets/opensb` (or `OPENSB_ASSETS`), which are laid over the pack like the game does.
-4. Run inside the dev shell: `nix develop .. -c cargo run --release --bin verify`.
+4. Run inside the dev shell: `nix develop .. -c cargo run --release --example verify`.
 
 `ENGINE_DIR=<dir with cxxflags.txt and link.txt>` at build time links another engine to compare engines.
 
@@ -26,6 +26,8 @@ This is a separate crate so that building stargen never needs an engine checkout
 | `dump <case>` | the operations, one per line |
 | `distinct <case>` | the strongest check: a custom sheet in which every cell is different (the vanilla silhouettes, colored by cell and position), so a frame cannot come out right by drawing another cell that looks the same; says which cell each frame draws |
 | `orientation <png>` | whether a png decodes the same in the engine and in the `image` crate (it does not, see below) |
+| `closest <sprite.png> "<asset path><directives>"` | applies what `stargen sprite --closest` made with the engine and says how many pixels differ from the sprite |
+| `closest.sh <sprite.png> [stargen options]` | for a sprite: the length of the `--closest` directives and of the ones built from nothing, whether the engine draws the sprite from each, and the instructions of applying them |
 | `cargo bench` | criterion: `parse`, `apply_frame`, `apply_frame_in_order`, `apply_sheet` |
 | `count.sh <work>` | instructions and cycles per parse, frame and sheet, from `perf stat` |
 | `ops.sh <work> <case>` | instructions that each operation costs |
