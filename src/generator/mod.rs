@@ -8,7 +8,7 @@ use std::time::Instant;
 type HashMap<K, V> = std::collections::HashMap<K, V, FixedState>;
 type HashSet<T> = std::collections::HashSet<T, FixedState>;
 use indexmap::IndexMap;
-use std::hash::{BuildHasher, Hasher};
+use std::hash::{BuildHasher, Hash, Hasher};
 use foldhash::fast::FixedState;
 use compact_str::{format_compact, CompactString};
 use anyhow::{bail, Context, Result};
@@ -34,6 +34,16 @@ fn hash_image(image: SubImage<&RgbaImage>) -> u64 {
         hasher.write(frame_row_bytes(&image, y));
     }
     hasher.finish()
+}
+
+// the pixels of a row, hashed as one block of bytes instead of element by element
+#[derive(PartialEq, Eq)]
+struct RowKey(Vec<[u8; 4]>);
+
+impl Hash for RowKey {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        state.write(self.0.as_flattened());
+    }
 }
 
 fn color_hex_len(color: [u8; 4]) -> u8 {
@@ -351,7 +361,7 @@ pub fn do_generate(attachments: &Inputs, frame_set: &FrameSet, id: &str) -> Resu
         max_start: u32
     }
 
-    let mut rows: IndexMap<Vec<[u8; 4]>, Row, FixedState> = IndexMap::default();
+    let mut rows: IndexMap<RowKey, Row, FixedState> = IndexMap::default();
     let mut frames: HashMap<u64, RowId> = HashMap::default();
 
     let mut legacy_len: u32 = 0;
@@ -432,7 +442,7 @@ pub fn do_generate(attachments: &Inputs, frame_set: &FrameSet, id: &str) -> Resu
                     let y_from_lowest = y - this_lowest;
                     let this_row = start_row + y_from_lowest as u16;
                     let sliding_begin = width.div_ceil(2) as u8 - (row_vec.len().div_ceil(2) as u8);
-                    let row = rows.entry(row_vec).or_insert_with(|| Row{
+                    let row = rows.entry(RowKey(row_vec)).or_insert_with(|| Row{
                         entries: vec![(0, sliding_begin, RowKind::Sliding)],
                         offsets: IndexMap::default(),
                         min_start: u32::MAX,
@@ -494,6 +504,7 @@ pub fn do_generate(attachments: &Inputs, frame_set: &FrameSet, id: &str) -> Resu
     let mut regular_starts: HashMap<u8, (u32, u8, u8)> = HashMap::default(); // start, row id
     let mut sliding_starts: HashMap<u8, (u32, u8, u8)> = HashMap::default();
     for (pixels, row_set) in rows.iter_mut() {
+        let pixels = &pixels.0;
         let effective_entries = row_set.entries.len() - 1; // there is currently always 1 sliding row
         // if it is not worth it, then simply insert it without deduplication
         if pixels.len() * effective_entries <= (effective_entries * 2) + pixels.len() {
