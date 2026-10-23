@@ -175,8 +175,8 @@ where F: Fn([u8; 4]) -> bool {
         }
     }
 
-    palette_strings.sort();
-    regular_strings.sort();
+    palette_strings.sort_unstable();
+    regular_strings.sort_unstable();
 
     let palette_result = if palette_strings.is_empty() { None } else {
         let mut palette_redirects: Vec<CompactString> = colors.into_iter()
@@ -188,7 +188,7 @@ where F: Fn([u8; 4]) -> bool {
                     if split_from_alpha { palette[3] = 0; }
                     replacement_string(palette, color)
                 }).collect();
-        palette_redirects.sort();
+        palette_redirects.sort_unstable();
         Some((palette_strings.join(";"), palette_redirects.join(";")))
     };
 
@@ -692,8 +692,8 @@ pub fn do_generate(attachments: &Inputs, frame_set: &FrameSet, id: &str) -> Resu
         bail!("too many color entries ({color_count} > 75000)")
     }
 
-    row_replace.sort();
-    color_replace.sort();
+    row_replace.sort_unstable();
+    color_replace.sort_unstable();
 
     let scale_value = |size: u32| SCALE_FIXERS.get(size as usize - 1).unwrap();
 
