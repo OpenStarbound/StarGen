@@ -5,7 +5,7 @@ set -euo pipefail
 work=$1
 case=$2
 cpu=${3:-2}
-ops=$("$(dirname "$0")/target/release/dump" "$case" 2>/dev/null || true)
+ops=$("$(dirname "$0")/target/release/examples/dump" "$case" 2>/dev/null || true)
 
 instr() { taskset -c "$cpu" perf stat -x, -e instructions:u "$work" "$case" "upto$1" "$2" 2>&1 >/dev/null | awk -F, '/cpu_core\/instructions/ {print $1}'; }
 
