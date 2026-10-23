@@ -39,15 +39,32 @@ fn color_hex_len_opaque(mut color: [u8; 4]) -> u8 {
     color_hex_len(color)
 }
 
+const HEX_DIGITS: &[u8; 16] = b"0123456789abcdef";
+
 fn color_to_hex(color: [u8; 4]) -> CompactString {
-    let is_rgb_compact = color[0..=2].iter().all(|&c| c.is_multiple_of(17));
-    if color[3] == 255 {
-        if is_rgb_compact
-            { format_compact!("{:x}{:x}{:x}", color[0] / 17, color[1] / 17, color[2]  / 17) }
-            else { format_compact!("{:02x}{:02x}{:02x}", color[0], color[1], color[2]) }
-    } else if is_rgb_compact && color[3].is_multiple_of(17)
-        { format_compact!("{:x}{:x}{:x}{:x}", color[0] / 17, color[1] / 17, color[2] / 17, color[3] / 17) }
-        else { format_compact!("{:02x}{:02x}{:02x}{:02x}", color[0], color[1], color[2], color[3]) }
+    // shortest form that decodes to the same color: #rgb, #rgba, #rrggbb or #rrggbbaa
+    let compact = color.iter().all(|&c| c.is_multiple_of(17));
+    let channels = if color[3] == 255 { 3 } else { 4 };
+    let mut buf = [0u8; 8];
+    let mut len = 0;
+    for &c in &color[..channels] {
+        if compact {
+            buf[len] = HEX_DIGITS[(c / 17) as usize];
+            len += 1;
+        } else {
+            buf[len] = HEX_DIGITS[(c >> 4) as usize];
+            buf[len + 1] = HEX_DIGITS[(c & 0xF) as usize];
+            len += 2;
+        }
+    }
+    CompactString::from(std::str::from_utf8(&buf[..len]).unwrap())
+}
+
+fn replacement_string(from: [u8; 4], to: [u8; 4]) -> CompactString {
+    let mut string = color_to_hex(from);
+    string.push('=');
+    string.push_str(&color_to_hex(to));
+    string
 }
 
 type RowId = u16;
@@ -130,9 +147,9 @@ where F: Fn([u8; 4]) -> bool {
         };
         if is_palette {
             if split_from_alpha { from[3] = 255; }
-            palette_strings.push(format_compact!("{}={}", color_to_hex(from), color_to_hex(new_to)))
+            palette_strings.push(replacement_string(from, new_to))
         } else {
-            regular_strings.push(format_compact!("{}={}", color_to_hex(from), color_to_hex(new_to)));
+            regular_strings.push(replacement_string(from, new_to));
         }
     }
 
@@ -147,7 +164,7 @@ where F: Fn([u8; 4]) -> bool {
                 })
             .map(|(color, mut palette)| {
                     if split_from_alpha { palette[3] = 0; }
-                    format_compact!("{}={}", color_to_hex(palette), color_to_hex(color))
+                    replacement_string(palette, color)
                 }).collect();
         palette_redirects.sort();
         Some((palette_strings.join(";"), palette_redirects.join(";")))
