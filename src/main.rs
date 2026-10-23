@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use stargen::generator::{self, BodyType, Species, SpriteOutputType};
+use sbgen::generator::{self, BodyType, Species, SpriteOutputType};
 use std::path::PathBuf;
 
 #[global_allocator]
@@ -97,12 +97,12 @@ fn main() -> anyhow::Result<()> {
                     "--closest only makes the raw output: hats and objects apply their directives to an image of their own"
                 );
             }
-            let options = stargen::closest::Options {
+            let options = sbgen::closest::Options {
                 under,
                 max_mismatch,
                 ..Default::default()
             };
-            stargen::closest::generate(&image, &assets, &options, output)
+            sbgen::closest::generate(&image, &assets, &options, output)
         }
         Command::Sprite {
             image,

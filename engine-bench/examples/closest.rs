@@ -1,4 +1,4 @@
-//! Applies the image that `stargen sprite --closest` made (an asset path followed by directives) with the real engine and compares it to the sprite.
+//! Applies the image that `sbgen sprite --closest` made (an asset path followed by directives) with the real engine and compares it to the sprite.
 //! Usage: closest <sprite.png> "<asset path><directives>" [iterations]
 //! With iterations it only applies them that many times, to count instructions with `perf stat`.
 use engine_bench::{

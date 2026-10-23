@@ -5,7 +5,7 @@ use engine_bench::{
     engine::{Directives, Image},
     harness::{self, Assets},
 };
-use stargen::generator::{self, Inputs};
+use sbgen::generator::{self, Inputs};
 
 fn main() -> anyhow::Result<()> {
     let case_name = std::env::args().nth(1).unwrap_or("male_body".into());
@@ -32,7 +32,7 @@ fn main() -> anyhow::Result<()> {
             ]);
         }
     }
-    let path = std::env::temp_dir().join("stargen-distinct-sheet.png");
+    let path = std::env::temp_dir().join("sbgen-distinct-sheet.png");
     sheet.save(&path)?;
     part.custom = path;
 

@@ -1,5 +1,5 @@
 use criterion::{BatchSize, BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
-use stargen::generator::{self, Inputs, data};
+use sbgen::generator::{self, Inputs, data};
 use std::hint::black_box;
 use std::path::Path;
 

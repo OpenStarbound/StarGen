@@ -1,7 +1,7 @@
 use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 use image::{Rgba, RgbaImage, imageops};
-use stargen::closest::{self, Options};
-use stargen::pak::Assets;
+use sbgen::closest::{self, Options};
+use sbgen::pak::Assets;
 use std::hint::black_box;
 use std::path::PathBuf;
 
@@ -71,9 +71,9 @@ fn bench_match(c: &mut Criterion) {
     group.finish();
 }
 
-/// The game's assets, from `STARGEN_BENCH_ASSETS` (packs and directories separated by `:`) or the default ones
+/// The game's assets, from `SBGEN_BENCH_ASSETS` (packs and directories separated by `:`) or the default ones
 fn game_assets() -> Option<Assets> {
-    let opened = match std::env::var("STARGEN_BENCH_ASSETS") {
+    let opened = match std::env::var("SBGEN_BENCH_ASSETS") {
         Ok(paths) => Assets::open(&paths.split(':').map(PathBuf::from).collect::<Vec<_>>()),
         Err(_) => Assets::open_default(),
     };
@@ -81,7 +81,7 @@ fn game_assets() -> Option<Assets> {
         Ok(assets) => Some(assets),
         Err(error) => {
             eprintln!(
-                "no game assets for the search benchmarks ({error:#}), set STARGEN_BENCH_ASSETS"
+                "no game assets for the search benchmarks ({error:#}), set SBGEN_BENCH_ASSETS"
             );
             None
         }
@@ -93,7 +93,7 @@ fn bench_search(c: &mut Criterion) {
     let Ok(sheet) = assets.read("/humanoid/human/malebody.png") else {
         return;
     };
-    let sheet = stargen::generator::decode_rgba(&sheet).unwrap();
+    let sheet = sbgen::generator::decode_rgba(&sheet).unwrap();
     let frame = sprite_of(&sheet, 43, 43, 43);
 
     let mut group = c.benchmark_group("search");

@@ -524,7 +524,7 @@ pub fn search(target: &RgbaImage, assets: &Assets, options: &Options) -> Result<
                         options.max_mismatch,
                         options.max_colors,
                     );
-                    if std::env::var_os("STARGEN_TRACE").is_some()
+                    if std::env::var_os("SBGEN_TRACE").is_some()
                         && started.elapsed().as_millis() > 500
                     {
                         eprintln!(
@@ -568,7 +568,7 @@ pub fn search(target: &RgbaImage, assets: &Assets, options: &Options) -> Result<
     })
 }
 
-/// What `stargen sprite --closest` does: the image path of the best asset and its operations, or the sprite built from nothing when that is shorter or nothing fits
+/// What `sbgen sprite --closest` does: the image path of the best asset and its operations, or the sprite built from nothing when that is shorter or nothing fits
 pub fn generate(
     image: &std::path::Path,
     packs: &[std::path::PathBuf],

@@ -1,5 +1,5 @@
 {
-  description = "stargen dev shell";
+  description = "sbgen dev shell";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";

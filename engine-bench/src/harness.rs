@@ -2,7 +2,7 @@
 //! the vanilla sprite sheets are the drawables' images and the sheets the directives were made from are what the engine should turn them into.
 use crate::engine::{Directives, Image, Pak};
 use anyhow::{Context, Result, bail};
-use stargen::generator::{
+use sbgen::generator::{
     self, Inputs,
     data::{self, FrameSet},
 };

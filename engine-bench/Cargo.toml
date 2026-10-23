@@ -3,10 +3,10 @@ name = "engine-bench"
 version = "0.1.0"
 edition = "2024"
 authors = ["kae"]
-description = "applies stargen's directives with the real OpenStarbound engine, to check and time them"
+description = "applies sbgen's directives with the real OpenStarbound engine, to check and time them"
 
 [dependencies]
-stargen = { path = ".." }
+sbgen = { path = ".." }
 image = { version = "0.25.10", default-features = false, features = ["png"] }
 anyhow = "1.0.104"
 

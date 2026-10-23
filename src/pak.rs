@@ -372,7 +372,7 @@ mod tests {
 
     #[test]
     fn reads_what_the_builder_wrote() {
-        let dir = std::env::temp_dir().join(format!("stargen-pak-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("sbgen-pak-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let big = vec![7u8; 300];
         let first = dir.join("first.pak");
@@ -418,7 +418,7 @@ mod tests {
 
     #[test]
     fn rejects_other_files() {
-        let path = std::env::temp_dir().join(format!("stargen-notpak-{}", std::process::id()));
+        let path = std::env::temp_dir().join(format!("sbgen-notpak-{}", std::process::id()));
         std::fs::write(&path, b"not a pack at all, no").unwrap();
         assert!(Pak::open(&path).is_err());
         std::fs::remove_file(path).unwrap();

@@ -345,7 +345,7 @@ dependencies = [
  "cc",
  "criterion",
  "image",
- "stargen",
+ "sbgen",
 ]
 
 [[package]]
@@ -785,6 +785,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "sbgen"
+version = "0.2.0"
+dependencies = [
+ "anyhow",
+ "arc-swap",
+ "clap",
+ "compact_str",
+ "foldhash",
+ "image",
+ "indexmap",
+ "infer",
+ "mimalloc",
+ "phf",
+ "png",
+ "serde",
+ "serde_json",
+ "tracing",
+]
+
+[[package]]
 name = "serde"
 version = "1.0.229"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -850,26 +870,6 @@ name = "slab"
 version = "0.4.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c790de23124f9ab44544d7ac05d60440adc586479ce501c1d6d7da3cd8c9cf5"
-
-[[package]]
-name = "stargen"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "arc-swap",
- "clap",
- "compact_str",
- "foldhash",
- "image",
- "indexmap",
- "infer",
- "mimalloc",
- "phf",
- "png",
- "serde",
- "serde_json",
- "tracing",
-]
 
 [[package]]
 name = "static_assertions"

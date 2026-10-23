@@ -1,4 +1,4 @@
-//! What the engine pays for the directives that stargen generates: parsing them when they arrive, and applying them to a
+//! What the engine pays for the directives that sbgen generates: parsing them when they arrive, and applying them to a
 //! drawable's image. The frames are the ones that the directives reproduce exactly.
 use criterion::{BatchSize, BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 use engine_bench::{
