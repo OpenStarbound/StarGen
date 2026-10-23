@@ -1,7 +1,6 @@
 use clap::{Parser, Subcommand};
-use std::path::PathBuf;
 use stargen::generator::{self, BodyType, Species, SpriteOutputType};
-
+use std::path::PathBuf;
 
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
@@ -10,7 +9,7 @@ static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 #[command(version, about = "generates compact directives for custom sprites")]
 struct Cli {
     #[command(subcommand)]
-    command: Command
+    command: Command,
 }
 
 // every command writes to a file by default, pass -o - for stdout
@@ -22,7 +21,7 @@ enum Command {
         #[arg(short = 't', long = "type", value_enum, default_value_t = SpriteOutputType::Raw)]
         output_type: SpriteOutputType,
         #[arg(short, long)]
-        output: Option<PathBuf>
+        output: Option<PathBuf>,
     },
     /// generates a custom shirt for both body types
     Chest {
@@ -35,7 +34,7 @@ enum Command {
         #[arg(long)]
         back_sleeve: Option<PathBuf>,
         #[arg(short, long)]
-        output: Option<PathBuf>
+        output: Option<PathBuf>,
     },
     /// generates custom pants
     Pants {
@@ -43,13 +42,13 @@ enum Command {
         #[arg(long)]
         hide_body: bool,
         #[arg(short, long)]
-        output: Option<PathBuf>
+        output: Option<PathBuf>,
     },
     /// generates custom backwear
     Back {
         back: PathBuf,
         #[arg(short, long)]
-        output: Option<PathBuf>
+        output: Option<PathBuf>,
     },
     /// generates custom humanoid body directives
     Humanoid {
@@ -66,18 +65,40 @@ enum Command {
         #[arg(long)]
         back_arm: Option<PathBuf>,
         #[arg(short, long)]
-        output: Option<PathBuf>
-    }
+        output: Option<PathBuf>,
+    },
 }
 
 fn main() -> anyhow::Result<()> {
     match Cli::parse().command {
-        Command::Sprite { image, output_type, output } => generator::generate_sprite(&image, output_type, output),
-        Command::Chest { chest_female, chest_male, front_sleeve, back_sleeve, output } =>
-            generator::generate_shirt(chest_female, chest_male, front_sleeve, back_sleeve, output),
-        Command::Pants { pants, hide_body, output } => generator::generate_pants(&pants, hide_body, output),
+        Command::Sprite {
+            image,
+            output_type,
+            output,
+        } => generator::generate_sprite(&image, output_type, output),
+        Command::Chest {
+            chest_female,
+            chest_male,
+            front_sleeve,
+            back_sleeve,
+            output,
+        } => generator::generate_shirt(chest_female, chest_male, front_sleeve, back_sleeve, output),
+        Command::Pants {
+            pants,
+            hide_body,
+            output,
+        } => generator::generate_pants(&pants, hide_body, output),
         Command::Back { back, output } => generator::generate_back(&back, output),
-        Command::Humanoid { body_type, species, body, head, front_arm, back_arm, output } =>
-            generator::generate_humanoid(body_type, species, body, head, front_arm, back_arm, output)
+        Command::Humanoid {
+            body_type,
+            species,
+            body,
+            head,
+            front_arm,
+            back_arm,
+            output,
+        } => generator::generate_humanoid(
+            body_type, species, body, head, front_arm, back_arm, output,
+        ),
     }
 }

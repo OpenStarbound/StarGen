@@ -1,0 +1,14 @@
+#!/bin/sh
+# Refuses the commit while a crate has unformatted code. Fix it with `cargo fmt` (and `cargo fmt` in engine-bench).
+# Enabled by `git config core.hooksPath .githooks`.
+root=$(git rev-parse --show-toplevel) || exit 1
+git diff --cached --name-only --diff-filter=ACMR | grep -q '\.rs$' || exit 0
+
+status=0
+for dir in "$root" "$root/engine-bench"; do
+    if ! (cd "$dir" && cargo fmt --check >/dev/null 2>&1); then
+        echo "pre-commit: ${dir#"$root"/} is not formatted, run cargo fmt there" >&2
+        status=1
+    fi
+done
+exit $status

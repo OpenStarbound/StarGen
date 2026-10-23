@@ -5,7 +5,7 @@ set -euo pipefail
 
 sb=$(realpath "${1:-$HOME/code/game/OpenStarbound}")
 nixdev=${NIXDEV:-$sb/../OpenStarbound-nixdev}
-out=$(dirname "$(realpath "$0")")/engine
+out=${OUT:-$(dirname "$(realpath "$0")")/engine}
 mkdir -p "$out"
 
 # the engine's flags. Those of a utility that uses the same libraries (asset_unpacker) minus the compiler, the output and the input

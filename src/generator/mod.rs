@@ -267,7 +267,10 @@ where
             })
             .collect();
         palette_redirects.sort_unstable();
-        Some((join_replacements(&palette_strings), join_replacements(&palette_redirects)))
+        Some((
+            join_replacements(&palette_strings),
+            join_replacements(&palette_redirects),
+        ))
     };
 
     (
@@ -314,7 +317,11 @@ pub struct Input {
 pub type Inputs = IndexMap<String, (Input, u32)>;
 
 // expands one row of packed palette indices, DEPTH bits each, most significant bits first
-fn expand_row<const DEPTH: usize, const PER_BYTE: usize>(src: &[u8], dst: &mut [[u8; 4]], lut: &[[u8; 4]; 256]) {
+fn expand_row<const DEPTH: usize, const PER_BYTE: usize>(
+    src: &[u8],
+    dst: &mut [[u8; 4]],
+    lut: &[[u8; 4]; 256],
+) {
     let mask = ((1u16 << DEPTH) - 1) as u8;
     let pixel_of = |byte: u8, k: usize| lut[((byte >> (8 - DEPTH * (k + 1))) & mask) as usize];
     let (full, tail) = dst.as_chunks_mut::<PER_BYTE>();
@@ -342,34 +349,45 @@ fn decode_indexed_png(data: &[u8]) -> Option<RgbaImage> {
     let (width, height) = (info.width, info.height);
     let palette = info.palette.as_deref()?;
     if info.interlaced || palette.len() % 3 != 0 || width == 0 || height == 0 {
-        return None
+        return None;
     }
     let (color_type, bit_depth) = reader.output_color_type();
     let depth = bit_depth as usize;
     if color_type != png::ColorType::Indexed || depth > 8 {
-        return None
+        return None;
     }
 
     // like the png crate does: a tRNS chunk with more entries than the palette is ignored, and unused entries are opaque black
     let trns = info.trns.as_deref().unwrap_or(&[]);
-    let trns = if trns.len() <= palette.len() / 3 { trns } else { &[] };
+    let trns = if trns.len() <= palette.len() / 3 {
+        trns
+    } else {
+        &[]
+    };
     let mut lut = [[0, 0, 0, 255]; 256];
     for (i, (rgb, entry)) in palette.chunks_exact(3).zip(lut.iter_mut()).enumerate() {
         let alpha = trns.get(i).copied().unwrap_or(255);
-        *entry = if alpha == 0 { [0; 4] } else { [rgb[0], rgb[1], rgb[2], alpha] };
+        *entry = if alpha == 0 {
+            [0; 4]
+        } else {
+            [rgb[0], rgb[1], rgb[2], alpha]
+        };
     }
 
     let mut buffer = vec![0; reader.output_buffer_size()?];
     let line_size = reader.next_frame(&mut buffer).ok()?.line_size;
     let row_len = width as usize * 4;
     let mut pixels = vec![0u8; row_len * height as usize];
-    for (src, dst) in buffer.chunks_exact(line_size).zip(pixels.chunks_exact_mut(row_len)) {
+    for (src, dst) in buffer
+        .chunks_exact(line_size)
+        .zip(pixels.chunks_exact_mut(row_len))
+    {
         let dst = dst.as_chunks_mut::<4>().0;
         match depth {
             1 => expand_row::<1, 8>(src, dst, &lut),
             2 => expand_row::<2, 4>(src, dst, &lut),
             4 => expand_row::<4, 2>(src, dst, &lut),
-            _ => expand_row::<8, 1>(src, dst, &lut)
+            _ => expand_row::<8, 1>(src, dst, &lut),
         }
     }
     RgbaImage::from_raw(width, height, pixels)
@@ -378,7 +396,7 @@ fn decode_indexed_png(data: &[u8]) -> Option<RgbaImage> {
 /// decodes an image to RGBA8, with every fully transparent pixel set to [0; 4]
 pub fn decode_rgba(data: &[u8]) -> Result<RgbaImage, image::ImageError> {
     if let Some(image) = decode_indexed_png(data) {
-        return Ok(image)
+        return Ok(image);
     }
     let mut buffer = image::load_from_memory(data)?.into_rgba8();
     for pixel in buffer.as_chunks_mut::<4>().0 {
@@ -1271,13 +1289,25 @@ mod tests {
         image
     }
 
-    fn encode(width: u32, height: u32, depth: png::BitDepth, color: png::ColorType, palette: Option<Vec<u8>>, trns: Option<Vec<u8>>, data: &[u8]) -> Vec<u8> {
+    fn encode(
+        width: u32,
+        height: u32,
+        depth: png::BitDepth,
+        color: png::ColorType,
+        palette: Option<Vec<u8>>,
+        trns: Option<Vec<u8>>,
+        data: &[u8],
+    ) -> Vec<u8> {
         let mut out = Vec::new();
         let mut encoder = png::Encoder::new(&mut out, width, height);
         encoder.set_color(color);
         encoder.set_depth(depth);
-        if let Some(palette) = palette { encoder.set_palette(palette); }
-        if let Some(trns) = trns { encoder.set_trns(trns); }
+        if let Some(palette) = palette {
+            encoder.set_palette(palette);
+        }
+        if let Some(trns) = trns {
+            encoder.set_trns(trns);
+        }
         let mut writer = encoder.write_header().unwrap();
         writer.write_image_data(data).unwrap();
         writer.finish().unwrap();
@@ -1290,7 +1320,7 @@ mod tests {
             &include_bytes!("templates/malebody.png")[..],
             &include_bytes!("templates/femalebody.png")[..],
             &include_bytes!("templates/malebody_greyscale.png")[..],
-            &include_bytes!("templates/femalebody_greyscale.png")[..]
+            &include_bytes!("templates/femalebody_greyscale.png")[..],
         ] {
             assert!(decode_indexed_png(template).is_some());
             assert_eq!(decode_rgba(template).unwrap(), reference(template));
@@ -1300,20 +1330,54 @@ mod tests {
     #[test]
     fn indexed_decode_like_image() {
         let mut seed = 0x2545F491u32;
-        let mut next = move || { seed = seed.wrapping_mul(1664525).wrapping_add(1013904223); (seed >> 16) as u8 };
-        for (depth, bits) in [(png::BitDepth::One, 1), (png::BitDepth::Two, 2), (png::BitDepth::Four, 4), (png::BitDepth::Eight, 8)] {
+        let mut next = move || {
+            seed = seed.wrapping_mul(1664525).wrapping_add(1013904223);
+            (seed >> 16) as u8
+        };
+        for (depth, bits) in [
+            (png::BitDepth::One, 1),
+            (png::BitDepth::Two, 2),
+            (png::BitDepth::Four, 4),
+            (png::BitDepth::Eight, 8),
+        ] {
             for width in [1u32, 2, 3, 5, 8, 13, 31] {
                 // palettes that are shorter than the index range, with tRNS that is shorter, as long as, or longer than the palette
-                for (palette_len, trns_len) in [(2usize, 0usize), (2, 1), (2, 2), (2, 3), (3, 2), (16, 9), (200, 100), (256, 256)] {
-                    if palette_len > 1 << bits { continue }
+                for (palette_len, trns_len) in [
+                    (2usize, 0usize),
+                    (2, 1),
+                    (2, 2),
+                    (2, 3),
+                    (3, 2),
+                    (16, 9),
+                    (200, 100),
+                    (256, 256),
+                ] {
+                    if palette_len > 1 << bits {
+                        continue;
+                    }
                     let height = 7;
                     let row_bytes = (width as usize * bits).div_ceil(8);
                     let data: Vec<u8> = (0..row_bytes * height).map(|_| next()).collect();
                     let palette: Vec<u8> = (0..palette_len * 3).map(|_| next()).collect();
-                    let trns: Vec<u8> = (0..trns_len).map(|i| if i % 3 == 0 { 0 } else { next() }).collect();
-                    let png = encode(width, height as u32, depth, png::ColorType::Indexed, Some(palette), (trns_len > 0).then_some(trns), &data);
-                    let fast = decode_indexed_png(&png).unwrap_or_else(|| panic!("no fast path: depth {bits}, width {width}"));
-                    assert_eq!(fast, reference(&png), "depth {bits}, width {width}, palette {palette_len}, trns {trns_len}");
+                    let trns: Vec<u8> = (0..trns_len)
+                        .map(|i| if i % 3 == 0 { 0 } else { next() })
+                        .collect();
+                    let png = encode(
+                        width,
+                        height as u32,
+                        depth,
+                        png::ColorType::Indexed,
+                        Some(palette),
+                        (trns_len > 0).then_some(trns),
+                        &data,
+                    );
+                    let fast = decode_indexed_png(&png)
+                        .unwrap_or_else(|| panic!("no fast path: depth {bits}, width {width}"));
+                    assert_eq!(
+                        fast,
+                        reference(&png),
+                        "depth {bits}, width {width}, palette {palette_len}, trns {trns_len}"
+                    );
                 }
             }
         }
@@ -1321,7 +1385,15 @@ mod tests {
 
     #[test]
     fn other_images_use_the_fallback() {
-        let rgba = encode(2, 2, png::BitDepth::Eight, png::ColorType::Rgba, None, None, &[0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 255, 0, 9, 9, 0]);
+        let rgba = encode(
+            2,
+            2,
+            png::BitDepth::Eight,
+            png::ColorType::Rgba,
+            None,
+            None,
+            &[0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 255, 0, 9, 9, 0],
+        );
         assert!(decode_indexed_png(&rgba).is_none());
         let decoded = decode_rgba(&rgba).unwrap();
         assert_eq!(decoded, reference(&rgba));

@@ -6,8 +6,14 @@ fn main() -> anyhow::Result<()> {
     let bytes = std::fs::read(&path)?;
     let engine = Image::decode(&bytes)?;
     let other = image::load_from_memory(&bytes)?.to_rgba8();
-    let same_up = (0..engine.height).all(|y| (0..engine.width).all(|x| engine.pixel(x, y) == other.get_pixel(x, y).0));
-    let same_flipped = (0..engine.height).all(|y| (0..engine.width).all(|x| engine.pixel(x, y) == other.get_pixel(x, engine.height - 1 - y).0));
-    println!("{path}: {}x{}; engine rows equal the image crate's: {same_up}; equal when flipped vertically: {same_flipped}", engine.width, engine.height);
+    let same_up = (0..engine.height)
+        .all(|y| (0..engine.width).all(|x| engine.pixel(x, y) == other.get_pixel(x, y).0));
+    let same_flipped = (0..engine.height).all(|y| {
+        (0..engine.width).all(|x| engine.pixel(x, y) == other.get_pixel(x, engine.height - 1 - y).0)
+    });
+    println!(
+        "{path}: {}x{}; engine rows equal the image crate's: {same_up}; equal when flipped vertically: {same_flipped}",
+        engine.width, engine.height
+    );
     Ok(())
 }
