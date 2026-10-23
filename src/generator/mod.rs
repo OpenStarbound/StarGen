@@ -36,6 +36,10 @@ fn hash_image(image: SubImage<&RgbaImage>) -> u64 {
     hasher.finish()
 }
 
+fn frame_is_empty(frame: &SubImage<&RgbaImage>) -> bool {
+    (0..frame.height()).all(|y| frame_row_bytes(frame, y).as_chunks::<4>().0.iter().all(|pixel| pixel[3] == 0))
+}
+
 // the pixels of a row, hashed as one block of bytes instead of element by element
 #[derive(PartialEq, Eq)]
 struct RowKey(Vec<[u8; 4]>);
@@ -394,7 +398,7 @@ pub fn do_generate(attachments: &Inputs, frame_set: &FrameSet, id: &str) -> Resu
         } else {
             None
         };
-        if frame.is_none() || frame.unwrap().pixels().all(|pixel| pixel.2[3] == 0) {
+        if frame.is_none() || frame_is_empty(&frame.unwrap()) {
             // Don't bother if this is an empty frame
             let mut remove_color = |color: &[u8; 4]| if color[3] > 0 { base_replace.push((*color, [255, 255, 255, 0])) };
             remove_color(&entry.lower_left);
