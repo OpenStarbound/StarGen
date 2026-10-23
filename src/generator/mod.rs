@@ -5,9 +5,11 @@ use std::fmt::Write;
 use std::io::Cursor;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
-use std::collections::{HashMap, HashSet};
+type HashMap<K, V> = std::collections::HashMap<K, V, FixedState>;
+type HashSet<T> = std::collections::HashSet<T, FixedState>;
 use indexmap::IndexMap;
-use std::hash::{Hasher, DefaultHasher, Hash};
+use std::hash::{BuildHasher, Hasher};
+use foldhash::fast::FixedState;
 use compact_str::{format_compact, CompactString};
 use anyhow::{bail, Context, Result};
 use clap::ValueEnum;
@@ -16,10 +18,12 @@ pub mod data;
 use data::*;
 
 fn hash_image(image: SubImage<&RgbaImage>) -> u64 {
-    let mut hasher = DefaultHasher::new();
-    image.dimensions().hash(&mut hasher);
-    for pixel in image.pixels() {
-        pixel.hash(&mut hasher);
+    let mut hasher = FixedState::default().build_hasher();
+    let (width, height) = image.dimensions();
+    hasher.write_u32(width);
+    hasher.write_u32(height);
+    for (_, _, pixel) in image.pixels() {
+        hasher.write_u32(u32::from_ne_bytes(pixel.0));
     }
     hasher.finish()
 }
@@ -82,7 +86,7 @@ where F: Fn([u8; 4]) -> bool {
         PaletteColor([u8; 4])
     }
 
-    let mut colors: HashMap<[u8; 4], ColorEntry> = HashMap::new();
+    let mut colors: HashMap<[u8; 4], ColorEntry> = HashMap::default();
     for (from, to) in replacements.iter() {
         let from_len = if split_from_alpha { color_hex_len_opaque(*from) } else { color_hex_len(*from) } as u32;
         let to_len = color_hex_len(*to) as u32;
@@ -238,7 +242,7 @@ fn do_generate_simple(input: &Input) -> Result<String> {
 
 pub fn do_generate(attachments: &Inputs, frame_set: &FrameSet, id: &str) -> Result<GenerationResult> {
     let mut warning = None;
-    let mut size_estimates: HashMap<String, (u32, u32)> = HashMap::new();
+    let mut size_estimates: HashMap<String, (u32, u32)> = HashMap::default();
     for (sheet_name, (input, columns)) in attachments.iter() {
         let filename = &input.filename;
         let (width, height) = (input.width, input.height);
@@ -323,7 +327,7 @@ pub fn do_generate(attachments: &Inputs, frame_set: &FrameSet, id: &str) -> Resu
     }
 
     let mut rows: IndexMap<Vec<[u8; 4]>, Row> = IndexMap::new();
-    let mut frames: HashMap<u64, RowId> = HashMap::new();
+    let mut frames: HashMap<u64, RowId> = HashMap::default();
 
     let mut legacy_len: u32 = 0;
 
@@ -339,7 +343,7 @@ pub fn do_generate(attachments: &Inputs, frame_set: &FrameSet, id: &str) -> Resu
         [(row >> 8) as u8, (row & 0xFF) as u8, off, 255]
     };
     let mut base_replace: Vec<([u8; 4], [u8; 4])> = vec![];
-    let mut base_rows: HashSet<RowId> = HashSet::new();
+    let mut base_rows: HashSet<RowId> = HashSet::default();
 
     for entry in entries.iter() {
         let image = {
@@ -459,13 +463,13 @@ pub fn do_generate(attachments: &Inputs, frame_set: &FrameSet, id: &str) -> Resu
         }
     };
 
-    let mut row_pixels: HashMap<RowId, (Vec<[u8; 4]>, u8)> = HashMap::new();
+    let mut row_pixels: HashMap<RowId, (Vec<[u8; 4]>, u8)> = HashMap::default();
     let mut row_replace: Vec<([u8; 4], [u8; 4])> = vec![];
     let total_rows: usize = rows.values().map(|row| row.entries.len()).sum();
     let effective_rows: usize = rows.len();
 
-    let mut regular_starts: HashMap<u8, (u32, u8, u8)> = HashMap::new(); // start, row id
-    let mut sliding_starts: HashMap<u8, (u32, u8, u8)> = HashMap::new();
+    let mut regular_starts: HashMap<u8, (u32, u8, u8)> = HashMap::default(); // start, row id
+    let mut sliding_starts: HashMap<u8, (u32, u8, u8)> = HashMap::default();
     for (pixels, row_set) in rows.iter_mut() {
         let effective_entries = row_set.entries.len() - 1; // there is currently always 1 sliding row
         // if it is not worth it, then simply insert it without deduplication
