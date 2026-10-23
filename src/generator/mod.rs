@@ -17,13 +17,21 @@ use clap::ValueEnum;
 pub mod data;
 use data::*;
 
+// the bytes of row `y` of a frame
+fn frame_row_bytes<'a>(frame: &'a SubImage<&RgbaImage>, y: u32) -> &'a [u8] {
+    let buffer: &RgbaImage = frame.inner();
+    let (offset_x, offset_y) = frame.offsets();
+    let start = ((offset_y + y) as usize * buffer.width() as usize + offset_x as usize) * 4;
+    &buffer.as_raw()[start..start + frame.width() as usize * 4]
+}
+
 fn hash_image(image: SubImage<&RgbaImage>) -> u64 {
     let mut hasher = FixedState::default().build_hasher();
     let (width, height) = image.dimensions();
     hasher.write_u32(width);
     hasher.write_u32(height);
-    for (_, _, pixel) in image.pixels() {
-        hasher.write_u32(u32::from_ne_bytes(pixel.0));
+    for y in 0..height {
+        hasher.write(frame_row_bytes(&image, y));
     }
     hasher.finish()
 }
@@ -392,13 +400,13 @@ pub fn do_generate(attachments: &Inputs, frame_set: &FrameSet, id: &str) -> Resu
 
             let mut frame_legacy_len: u32 = 0;
             for y in 0..height {
-                let row_view = frame.view(0, height - y - 1, width, 1);
+                let row_pixels: &[[u8; 4]] = frame_row_bytes(&frame, height - y - 1).as_chunks::<4>().0;
                 let (mut start, mut end) = (width, 0);
                 let mut solid = false;
-                for (x, _, pixel) in row_view.pixels() {
+                for (x, pixel) in (0u32..).zip(row_pixels) {
                     if pixel[3] > 0 {
                         solid = true;
-                        frame_legacy_len += 10 + color_hex_len(pixel.channels().try_into().unwrap()) as u32;
+                        frame_legacy_len += 10 + color_hex_len(*pixel) as u32;
                         if start == width { start = x; }
                         end = x;
                     }
@@ -406,9 +414,7 @@ pub fn do_generate(attachments: &Inputs, frame_set: &FrameSet, id: &str) -> Resu
                 if solid {
                     if this_lowest == height { this_lowest = y; }
                     if y > this_highest { this_highest = y; }
-                    let row_vec: Vec<[u8; 4]> = (start..=end)
-                        .map(|x| row_view.get_pixel(x, 0).channels().try_into().unwrap())
-                        .collect();
+                    let row_vec = row_pixels[start as usize..=end as usize].to_vec();
                     frame_rows.push((row_vec, start, y));
                 }
             }
