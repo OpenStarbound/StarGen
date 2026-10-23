@@ -143,6 +143,51 @@ fn main() -> anyhow::Result<()> {
         }
     }
 
+    // Every cell of every humanoid sheet of the game, for all of its species, through the directives of the first case: real
+    // sprites of all kinds of shapes through the prefix of the frameset. Hashed after the prefix and at the end.
+    let case = harness::humanoid_cases().into_iter().next().unwrap();
+    let text = case.directives()?;
+    let ops: Vec<&str> = text.split('?').filter(|op| !op.is_empty()).collect();
+    let prefix_ops = case
+        .frame_set
+        .prefix
+        .split('?')
+        .filter(|op| !op.is_empty())
+        .count();
+    let mut engine = Directives::new(&text)?;
+    for species in [
+        "apex", "avian", "floran", "glitch", "human", "hylotl", "novakid",
+    ] {
+        for sheet in [
+            "malebody",
+            "femalebody",
+            "frontarm",
+            "backarm",
+            "malehead",
+            "femalehead",
+        ] {
+            let path = format!("/humanoid/{species}/{sheet}.png");
+            let Ok(bytes) = assets.read(&path) else {
+                continue;
+            };
+            let image = Image::decode(&bytes)?;
+            for row in 0..image.height / 43 {
+                for column in 0..image.width / 43 {
+                    let cell = image.crop(column * 43, row * 43, 43, 43);
+                    let (w, h, rgba) = engine.apply_in_place(&cell)?;
+                    println!("art {path} {column},{row} engine {:016x}", hash(w, h, rgba));
+                    let (w, h, rgba) = engine.apply_first(&cell, prefix_ops)?;
+                    println!("art {path} {column},{row} prefix {:016x}", hash(w, h, rgba));
+                    let (w, h, rgba) = engine.apply_first(&cell, ops.len())?;
+                    println!(
+                        "art {path} {column},{row} in-order {:016x}",
+                        hash(w, h, rgba)
+                    );
+                }
+            }
+        }
+    }
+
     let mut random = Random(0x9e3779b97f4a7c15);
     let images: Vec<Image> = (0..60).map(|_| random.image()).collect();
     for directives in DIRECTIVES {

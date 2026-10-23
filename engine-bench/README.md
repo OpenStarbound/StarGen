@@ -24,6 +24,8 @@ This is a separate crate so that building stargen never needs an engine checkout
 | `inspect <case> <frame>` | a map of one frame, `.` transparent, `#` same, `X` different, `e` missing, `g` extra |
 | `steps <case> <frame>...` | size and visible pixels of a frame after each operation |
 | `dump <case>` | the operations, one per line |
+| `distinct <case>` | the strongest check: a custom sheet in which every cell is different (the vanilla silhouettes, colored by cell and position), so a frame cannot come out right by drawing another cell that looks the same; says which cell each frame draws |
+| `orientation <png>` | whether a png decodes the same in the engine and in the `image` crate (it does not, see below) |
 | `cargo bench` | criterion: `parse`, `apply_frame`, `apply_frame_in_order`, `apply_sheet` |
 | `count.sh <work>` | instructions and cycles per parse, frame and sheet, from `perf stat` |
 | `ops.sh <work> <case>` | instructions that each operation costs |
@@ -31,6 +33,12 @@ This is a separate crate so that building stargen never needs an engine checkout
 Wall clock times of operations this small are noisy on the machine this was written on (the cores change speed between runs, the same benchmark is sometimes 1.6 times slower).
 The instruction and cycle counts from `count.sh` and `ops.sh` are not, so use those to compare.
 `CRITERION_HOME` is shared between runs if criterion's own comparison is wanted.
+
+## Rows Start at the Bottom in the Engine
+
+The engine's images start at the lower left, the `image` crate's (and so the generator's) at the top left, and the frame grid of a sheet is counted from the top.
+`Case::frames` takes the cell at row `rows - 1 - y` of an engine image for the generator's row `y`.
+Getting this wrong swaps the rows of a sheet in pairs (0 and 5, 1 and 4, 2 and 3 of the body), and then frames come out as their neighbours or blank, which looks like a bug in the generator but is not one.
 
 ## Changing the Engine
 

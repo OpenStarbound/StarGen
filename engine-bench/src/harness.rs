@@ -118,6 +118,8 @@ impl Case {
             }
             // frames are square, like the generator assumes
             let size = custom.width / part.columns;
+            // The engine's images start at the lower left, the generator counts the cells of a sheet from the top: its row y is the engine's row (rows - 1 - y)
+            let rows = custom.height / size;
             for entry in self
                 .frame_set
                 .entries
@@ -130,8 +132,8 @@ impl Case {
                 }
                 frames.push(Frame {
                     name: format!("{}:{}", part.key, entry.frame),
-                    base: vanilla.crop(x * size, y * size, size, size),
-                    expected: custom.crop(x * size, y * size, size, size),
+                    base: vanilla.crop(x * size, (rows - 1 - y) * size, size, size),
+                    expected: custom.crop(x * size, (rows - 1 - y) * size, size, size),
                 });
             }
         }

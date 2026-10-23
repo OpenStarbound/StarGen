@@ -12,7 +12,7 @@ counts() { # case what iterations -> "instructions cycles"
 }
 
 printf '%-24s %-6s %14s %14s\n' case what instructions cycles
-for case in male_body female_body male_body_greyscale female_body_greyscale; do
+for case in ${CASES:-male_body female_body male_body_greyscale female_body_greyscale}; do
     for what in parse apply sheet; do
         case $what in sheet) a=10; b=30 ;; *) a=200; b=600 ;; esac
         read -r ia ca <<< "$(counts "$case" "$what" "$a")"
