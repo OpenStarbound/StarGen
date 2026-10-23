@@ -1,0 +1,24 @@
+[package]
+name = "engine-bench"
+version = "0.1.0"
+edition = "2024"
+authors = ["kae"]
+description = "applies stargen's directives with the real OpenStarbound engine, to check and time them"
+
+[dependencies]
+stargen = { path = ".." }
+image = { version = "0.25.10", default-features = false, features = ["png"] }
+anyhow = "1.0.104"
+
+[build-dependencies]
+cc = "1"
+
+[dev-dependencies]
+criterion = { version = "0.8.2", features = ["html_reports"] }
+
+[[bench]]
+name = "directives"
+harness = false
+
+[profile.release]
+debug = "line-tables-only"
