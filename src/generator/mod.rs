@@ -12,7 +12,7 @@ use compact_str::{format_compact, CompactString};
 use anyhow::{bail, Context, Result};
 use clap::ValueEnum;
 
-mod data;
+pub mod data;
 use data::*;
 
 fn hash_image(image: SubImage<&RgbaImage>) -> u64 {
@@ -75,7 +75,7 @@ fn palette_id_to_color(val: u16) -> [u8; 4] {
 }
 
 // returns palette assignments, then palette redirects, then color redirects
-fn create_replacer<F>(replacements: Vec<([u8; 4], [u8; 4])>, split_from_alpha: bool, palette_tester: F) -> (Option<(String, String)>, Option<String>)
+pub fn create_replacer<F>(replacements: Vec<([u8; 4], [u8; 4])>, split_from_alpha: bool, palette_tester: F) -> (Option<(String, String)>, Option<String>)
 where F: Fn([u8; 4]) -> bool {
     enum ColorEntry {
         Count(u32, u32),
@@ -152,7 +152,7 @@ where F: Fn([u8; 4]) -> bool {
     (palette_result, if regular_strings.is_empty() { None } else { Some(regular_strings.join(";")) })
 }
 
-fn create_replacer_string<F : Fn([u8; 4]) -> bool>(replacements: Vec<([u8; 4], [u8; 4])>, split_from_alpha: bool, palette_tester: F) -> String {
+pub fn create_replacer_string<F : Fn([u8; 4]) -> bool>(replacements: Vec<([u8; 4], [u8; 4])>, split_from_alpha: bool, palette_tester: F) -> String {
     let (palette, colors) = create_replacer(replacements, split_from_alpha, palette_tester);
     if let Some((initial, assign)) = palette {
         if let Some(colors) = colors {
@@ -166,21 +166,21 @@ fn create_replacer_string<F : Fn([u8; 4]) -> bool>(replacements: Vec<([u8; 4], [
     else { String::new() }
 }
 
-struct GenerationResult {
-    description: String,
-    directives: String
+pub struct GenerationResult {
+    pub description: String,
+    pub directives: String
 }
 
-struct Input {
-    filename: String,
-    data: Vec<u8>,
-    width: u32,
-    height: u32
+pub struct Input {
+    pub filename: String,
+    pub data: Vec<u8>,
+    pub width: u32,
+    pub height: u32
 }
 
-type Inputs = IndexMap<String, (Input, u32)>;
+pub type Inputs = IndexMap<String, (Input, u32)>;
 
-fn load_input(path: &Path) -> Result<Input> {
+pub fn load_input(path: &Path) -> Result<Input> {
     let filename = path.file_name().map_or_else(|| path.display().to_string(), |name| name.to_string_lossy().into_owned());
     let data = std::fs::read(path).with_context(|| format!("failed to read {}", path.display()))?;
     let dimensions = image::ImageReader::new(Cursor::new(&data)).with_guessed_format()?.into_dimensions();
@@ -236,7 +236,7 @@ fn do_generate_simple(input: &Input) -> Result<String> {
     Ok(directives)
 }
 
-fn do_generate(attachments: &Inputs, frame_set: &FrameSet, id: &str) -> Result<GenerationResult> {
+pub fn do_generate(attachments: &Inputs, frame_set: &FrameSet, id: &str) -> Result<GenerationResult> {
     let mut warning = None;
     let mut size_estimates: HashMap<String, (u32, u32)> = HashMap::new();
     for (sheet_name, (input, columns)) in attachments.iter() {

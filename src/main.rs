@@ -1,8 +1,7 @@
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
-use generator::{BodyType, Species, SpriteOutputType};
+use stargen::generator::{self, BodyType, Species, SpriteOutputType};
 
-pub mod generator;
 
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
