@@ -500,7 +500,7 @@ pub fn do_generate(attachments: &Inputs, frame_set: &FrameSet, id: &str) -> Resu
         }
     };
 
-    let mut row_pixels: HashMap<RowId, (Vec<[u8; 4]>, u8)> = HashMap::default();
+    let mut row_pixels: HashMap<RowId, (&[[u8; 4]], u8)> = HashMap::default();
     let mut row_replace: Vec<([u8; 4], [u8; 4])> = vec![];
     let total_rows: usize = rows.values().map(|row| row.entries.len()).sum();
     let effective_rows: usize = rows.len();
@@ -514,7 +514,7 @@ pub fn do_generate(attachments: &Inputs, frame_set: &FrameSet, id: &str) -> Resu
         if pixels.len() * effective_entries <= (effective_entries * 2) + pixels.len() {
             for (row, start, kind) in row_set.entries.iter() {
                 if let RowKind::Sliding = kind { continue; }
-                row_pixels.insert(*row, (pixels.clone(), frame_begin + start));
+                row_pixels.insert(*row, (pixels.as_slice(), frame_begin + start));
             }
         } else {
             let sweet_spot = (width.div_ceil(2)) as i16 - (pixels.len().div_ceil(2) as i16);
@@ -634,7 +634,7 @@ pub fn do_generate(attachments: &Inputs, frame_set: &FrameSet, id: &str) -> Resu
             for i in 0..len {
                 let (this_row, this_start, this_kind) = row_set.entries.get(i).unwrap();
                 if matches!(this_kind, RowKind::Pointed) {
-                    row_pixels.insert(*this_row, (pixels.clone(), frame_begin + this_start));
+                    row_pixels.insert(*this_row, (pixels.as_slice(), frame_begin + this_start));
                 }
             }
 
@@ -650,7 +650,7 @@ pub fn do_generate(attachments: &Inputs, frame_set: &FrameSet, id: &str) -> Resu
                     && ((row_begin - start) as i16 + width_u8 as i16) < 255;
                 let off = if sliding && this_can_slide {row_begin - start} else {frame_begin};
                 if !this_can_slide {
-                    row_pixels.insert(row, (pixels.clone(), frame_begin + start));
+                    row_pixels.insert(row, (pixels.as_slice(), frame_begin + start));
                 } else if row != ref_row || (sliding && start != off) {
                     base_rows.remove(&row);
                     let target_row = *new_row.get_or_insert_with(|| {
@@ -680,7 +680,7 @@ pub fn do_generate(attachments: &Inputs, frame_set: &FrameSet, id: &str) -> Resu
     let mut color_replace: Vec<([u8; 4], [u8; 4])> = row_pixels
         .into_iter()
         .flat_map(move |(row, (colors, start))| {
-            colors.into_iter()
+            colors.iter().copied()
                 .enumerate()
                 .filter_map(move |(x, color)| {
                     if color[3] > 0 { Some((row_to_color(row, start + x as u8), color)) } else { None }
