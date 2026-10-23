@@ -1,6 +1,6 @@
 use serde_json::{json, to_string_pretty};
 use image::{GenericImageView, Pixel};
-use image::{SubImage, RgbaImage, Rgba};
+use image::{SubImage, RgbaImage};
 use std::fmt::Write;
 use std::io::Cursor;
 use std::path::{Path, PathBuf};
@@ -316,12 +316,12 @@ pub fn do_generate(attachments: &Inputs, frame_set: &FrameSet, id: &str) -> Resu
         let Ok(image) = image::load_from_memory(&input.data) else {
             bail!("failed to decode {name}")
         };
-        let mut buffer = image.to_rgba8();
-        buffer.pixels_mut().for_each(|pixel| {
+        let mut buffer = image.into_rgba8();
+        for pixel in buffer.as_chunks_mut::<4>().0 {
             if pixel[3] == 0 {
-                *pixel = Rgba([0, 0, 0, 0]);
+                *pixel = [0; 4];
             }
-        });
+        }
         images.insert(name.clone(), Image{
             buffer,
             frames: 0u16
