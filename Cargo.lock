@@ -855,6 +855,7 @@ dependencies = [
  "infer",
  "mimalloc",
  "phf",
+ "png",
  "serde",
  "serde_json",
  "tracing",
